@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   Container, 
   Box, 
@@ -6,9 +6,13 @@ import {
   Button, 
   CircularProgress,
   Paper,
-  Alert
+  Alert,
+  useTheme
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import SecurityIcon from '@mui/icons-material/Security';
 import axios from 'axios';
 
 function App() {
@@ -16,9 +20,15 @@ function App() {
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
   const [error, setError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const theme = useTheme();
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
+    handleFile(file);
+  };
+
+  const handleFile = (file) => {
     if (file && file.type.startsWith('video/')) {
       setSelectedFile(file);
       setError(null);
@@ -27,6 +37,23 @@ function App() {
       setSelectedFile(null);
     }
   };
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    handleFile(file);
+  }, []);
 
   const handleUpload = async () => {
     if (!selectedFile) return;
@@ -58,13 +85,44 @@ function App() {
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ my: 4, textAlign: 'center' }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Video Upload App
+    <Container maxWidth="md">
+      <Box sx={{ my: 6, textAlign: 'center' }}>
+        <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+          Simple Video Upload App
         </Typography>
         
-        <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
+        <Typography variant="h5" color="text.secondary" sx={{ mb: 4 }}>
+          Upload in Seconds. No Hassle.
+        </Typography>
+
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 4, mb: 6 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CheckCircleIcon color="primary" />
+            <Typography>Select a file</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <RocketLaunchIcon color="primary" />
+            <Typography>Upload quickly</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <SecurityIcon color="primary" />
+            <Typography>Secure storage</Typography>
+          </Box>
+        </Box>
+
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            p: 4, 
+            mt: 3,
+            border: isDragging ? `2px dashed ${theme.palette.primary.main}` : '2px dashed #ccc',
+            backgroundColor: isDragging ? theme.palette.action.hover : 'background.paper',
+            transition: 'all 0.3s ease'
+          }}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <input
             accept="video/*"
             style={{ display: 'none' }}
@@ -78,14 +136,20 @@ function App() {
               component="span"
               startIcon={<CloudUploadIcon />}
               disabled={uploading}
+              size="large"
+              sx={{ mb: 2 }}
             >
-              Select Video
+              Choose Video File
             </Button>
           </label>
 
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+            or drag and drop your video here
+          </Typography>
+
           {selectedFile && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="body1">
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="body1" sx={{ mb: 2 }}>
                 Selected: {selectedFile.name}
               </Typography>
               <Button
@@ -93,9 +157,9 @@ function App() {
                 color="primary"
                 onClick={handleUpload}
                 disabled={uploading}
-                sx={{ mt: 2 }}
+                size="large"
               >
-                {uploading ? <CircularProgress size={24} /> : 'Upload'}
+                {uploading ? <CircularProgress size={24} /> : 'Upload Video'}
               </Button>
             </Box>
           )}
@@ -119,6 +183,10 @@ function App() {
             </Alert>
           )}
         </Paper>
+
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 4 }}>
+          No complex setup. No extra steps. Just fast, frictionless uploads.
+        </Typography>
       </Box>
     </Container>
   );
